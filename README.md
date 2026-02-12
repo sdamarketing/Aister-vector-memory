@@ -33,7 +33,9 @@ Vector Memory for Aister — smart search system using PostgreSQL + pgvector + e
 
 Full instructions in [INSTALL.md](INSTALL.md).
 
-**Quick start:**
+**Option A: Docker (Recommended for isolation)** — see SKILL.md for docker-compose setup.
+
+**Option B: Quick start (bare metal):**
 ```bash
 # 1. Create venv and install dependencies
 python3 -m venv ~/.openclaw/workspace/vector_memory_venv

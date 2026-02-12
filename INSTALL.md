@@ -8,6 +8,8 @@ Vector memory for Aister — smart search system using PostgreSQL + pgvector + e
 > - **Network:** First run will download e5-large-v2 model (~1.3GB) from HuggingFace
 > - **Privileges:** Requires root for system packages and PostgreSQL superuser
 > - **Passwords:** Never use hardcoded passwords from examples in production
+> - **Review code:** Scan the Python scripts before running to confirm no unexpected behavior
+> - **Isolation:** Recommended to run in a container/VM for better security
 
 ## Requirements
 
@@ -16,7 +18,54 @@ Vector memory for Aister — smart search system using PostgreSQL + pgvector + e
 - **CPU:** any modern processor
 - **Python:** 3.12+
 
-## Step 1: Install Dependencies
+## Option A: Docker Setup (Recommended for Isolation)
+
+If you prefer isolation, use Docker for PostgreSQL:
+
+```bash
+# Create Docker setup
+mkdir -p ~/.openclaw/workspace/vector-memory-docker
+cd ~/.openclaw/workspace/vector-memory-docker
+
+cat > docker-compose.yml << 'EOF'
+version: '3.8'
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: vector-memory-db
+    environment:
+      POSTGRES_USER: aister
+      POSTGRES_PASSWORD: YOUR_SECURE_PASSWORD
+      POSTGRES_DB: vector_memory
+    volumes:
+      - vector_memory_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
+    restart: unless-stopped
+
+volumes:
+  vector_memory_data:
+EOF
+
+# Start the database
+docker-compose up -d
+
+# Verify it's running
+docker-compose ps
+```
+
+Then proceed to **Step 1** below, and update your env file to use port 5433:
+```bash
+export VECTOR_MEMORY_DB_PORT="5433"
+```
+
+**Note:** With Docker, skip Steps 2-4 (PostgreSQL is already configured).
+
+---
+
+## Option B: Bare Metal Installation
+
+### Step 1: Install Dependencies
 
 ```bash
 # Create Python venv
@@ -35,7 +84,7 @@ pip install flask psycopg2-binary sentence-transformers numpy requests
 - `sentence-transformers` — library for e5-large-v2
 - `numpy` — for working with vectors
 
-## Step 2: Configure PostgreSQL
+### Step 2: Configure PostgreSQL (Bare Metal Only)
 
 Vector memory requires PostgreSQL 16 with pgvector extension:
 
@@ -51,7 +100,7 @@ sudo apt-get install postgresql-16-pgvector
 sudo dnf install postgresql-16-pgvector
 ```
 
-## Step 3: Create Database and User
+### Step 3: Create Database (Bare Metal Only)
 
 Connect to PostgreSQL as `postgres`:
 
@@ -127,7 +176,7 @@ $$ LANGUAGE plpgsql;
 \q
 ```
 
-## Step 4: Create Database User
+### Step 4: Create Database User (Bare Metal Only)
 
 > **Security:** Replace `YOUR_SECURE_PASSWORD` with a strong unique password!
 
@@ -144,7 +193,9 @@ GRANT USAGE ON SCHEMA public TO aister;
 \q
 ```
 
-## Step 5: Configure Environment Variables
+## Common Steps (Both Options)
+
+### Step 5: Configure Environment Variables
 
 Create a file with environment variables:
 
@@ -174,7 +225,7 @@ EOF
 chmod 600 ~/.config/vector-memory/env
 ```
 
-## Step 6: Copy Scripts
+### Step 6: Copy Scripts
 
 ```bash
 # Create scripts directory
@@ -189,7 +240,7 @@ cp memory_reindex.py ~/.openclaw/workspace/vector_memory/
 chmod +x ~/.openclaw/workspace/vector_memory/*.py
 ```
 
-## Step 7: Start Embedding Service
+### Step 7: Start Embedding Service
 
 > **Important:** First run will download ~1.3GB model from HuggingFace!
 
@@ -227,7 +278,7 @@ if ! pgrep -f "embedding_service.py" > /dev/null; then
 fi' >> ~/.bashrc
 ```
 
-## Step 8: Reindex Memory
+### Step 8: Reindex Memory
 
 ```bash
 # Load environment variables
@@ -249,7 +300,7 @@ Reindex complete:
   Total memories in DB: 42
 ```
 
-## Step 9: Test Search
+### Step 9: Test Search
 
 ```bash
 # Load environment variables
