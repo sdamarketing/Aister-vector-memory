@@ -139,7 +139,7 @@ CREATE TABLE indexed_files (
     last_indexed TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create upsert function
+-- Create upsert function (insert new, or update if very similar exists)
 CREATE OR REPLACE FUNCTION upsert_memory(
     p_content TEXT,
     p_embedding vector(1024),
@@ -149,25 +149,29 @@ CREATE OR REPLACE FUNCTION upsert_memory(
 DECLARE
     v_id INTEGER;
 BEGIN
+    -- Find existing memory with very high similarity (>0.95)
     SELECT id INTO v_id FROM memories
     WHERE 1 - (embedding <=> p_embedding) > 0.95
     ORDER BY 1 - (embedding <=> p_embedding) DESC
     LIMIT 1;
 
     IF v_id IS NOT NULL THEN
-        INSERT INTO memories (content, embedding, metadata, source)
-        VALUES (p_content, p_embedding, p_metadata, p_source)
-        RETURNING id;
-    ELSE
+        -- Found similar: update existing
         UPDATE memories
         SET content = p_content,
             embedding = p_embedding,
             metadata = p_metadata,
             source = p_source,
             updated_at = NOW()
-        WHERE id = v_id;
-
-        RETURNING id;
+        WHERE id = v_id
+        RETURNING id INTO v_id;
+        RETURN v_id;
+    ELSE
+        -- Not found: insert new
+        INSERT INTO memories (content, embedding, metadata, source)
+        VALUES (p_content, p_embedding, p_metadata, p_source)
+        RETURNING id INTO v_id;
+        RETURN v_id;
     END IF;
 END;
 $$ LANGUAGE plpgsql;

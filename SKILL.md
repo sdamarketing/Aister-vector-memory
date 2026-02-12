@@ -6,6 +6,23 @@ Vector memory for Aister — search by meaning, not by grep!
 
 Vector memory using PostgreSQL + pgvector + e5-large-v2. Enables searching information by MEANING, not just keywords.
 
+## env_variables
+
+| Variable | Required | Default | Description |
+|----------|:--------:|---------|-------------|
+| `VECTOR_MEMORY_DB_PASSWORD` | **Yes** | — | PostgreSQL password for database access |
+| `VECTOR_MEMORY_DB_HOST` | No | `localhost` | PostgreSQL server host |
+| `VECTOR_MEMORY_DB_PORT` | No | `5432` | PostgreSQL server port |
+| `VECTOR_MEMORY_DB_NAME` | No | `vector_memory` | Database name |
+| `VECTOR_MEMORY_DB_USER` | No | `aister` | Database user |
+| `EMBEDDING_SERVICE_URL` | No | `http://127.0.0.1:8765` | Embedding service URL |
+| `EMBEDDING_MODEL` | No | `intfloat/e5-large-v2` | Model for generating embeddings |
+| `EMBEDDING_PORT` | No | `8765` | Port for embedding service |
+| `VECTOR_MEMORY_DIR` | No | `~/.openclaw/workspace/memory` | Directory containing memory files |
+| `VECTOR_MEMORY_CHUNK_SIZE` | No | `500` | Text chunk size in characters |
+| `VECTOR_MEMORY_THRESHOLD` | No | `0.5` | Similarity threshold for search |
+| `VECTOR_MEMORY_LIMIT` | No | `5` | Maximum search results |
+
 ## Features
 
 - **Semantic search** — enter a query and Aister will find similar content
@@ -70,23 +87,6 @@ This skill requires database credentials to function:
 - Use a strong, unique password — never reuse credentials
 - Store the password file with `chmod 600` permissions
 - Do not commit the password file to version control
-
-## Environment Variables
-
-| Variable | Required | Description | Default |
-|----------|----------|-------------|---------|
-| `VECTOR_MEMORY_DB_HOST` | No | PostgreSQL host | `localhost` |
-| `VECTOR_MEMORY_DB_PORT` | No | PostgreSQL port | `5432` |
-| `VECTOR_MEMORY_DB_NAME` | No | Database name | `vector_memory` |
-| `VECTOR_MEMORY_DB_USER` | No | Database user | `aister` |
-| `VECTOR_MEMORY_DB_PASSWORD` | **Yes** | Database password | — |
-| `EMBEDDING_SERVICE_URL` | No | Embedding service URL | `http://127.0.0.1:8765` |
-| `EMBEDDING_MODEL` | No | Model for embeddings | `intfloat/e5-large-v2` |
-| `EMBEDDING_PORT` | No | Embedding service port | `8765` |
-| `VECTOR_MEMORY_DIR` | No | Memory files directory | `~/.openclaw/workspace/memory` |
-| `VECTOR_MEMORY_CHUNK_SIZE` | No | Chunk size in characters | `500` |
-| `VECTOR_MEMORY_THRESHOLD` | No | Similarity threshold | `0.5` |
-| `VECTOR_MEMORY_LIMIT` | No | Max search results | `5` |
 
 ## Warnings
 
