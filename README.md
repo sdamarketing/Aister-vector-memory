@@ -161,6 +161,12 @@ skills
 
 ### 1.0.0 (2026-02-12)
 - 🎉 First version for ClawHub
+- ✅ Vector memory on PostgreSQL + pgvector
+- ✅ e5-large-v2 model (1024 dims)
+- ✅ Semantic search
+- ✅ Auto-save
+- ✅ Integration with OpenClaw
+- ✅ Documentation (README.md + INSTALL.md)
 
 ---
 

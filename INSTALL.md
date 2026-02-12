@@ -197,10 +197,13 @@ chmod +x ~/.openclaw/workspace/vector_memory/*.py
 # Load environment variables
 source ~/.config/vector-memory/env
 
-# Start service manually (for testing)
-~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/embedding_service.py
+# Start service in background
+nohup ~/.openclaw/workspace/vector_memory_venv/bin/python3 \
+  ~/.openclaw/workspace/vector_memory/embedding_service.py \
+  > /tmp/embedding_service.log 2>&1 &
 
-# In another terminal, check status
+# Wait a few seconds for model to load, then check status
+sleep 5
 curl http://127.0.0.1:8765/health
 ```
 
@@ -209,40 +212,19 @@ curl http://127.0.0.1:8765/health
 {"model":"intfloat/e5-large-v2","status":"ok","embedding_dim":1024}
 ```
 
-### Autostart via systemd (optional)
+### Autostart (optional)
 
-Create a systemd unit for automatic startup:
+To automatically start the embedding service when you log in, add to your shell profile:
 
 ```bash
-mkdir -p ~/.config/systemd/user
-
-cat > ~/.config/systemd/user/embedding-service.service << 'EOF'
-[Unit]
-Description=Vector Memory Embedding Service
-After=network.target
-
-[Service]
-Type=simple
-EnvironmentFile=%h/.config/vector-memory/env
-ExecStart=%h/.openclaw/workspace/vector_memory_venv/bin/python3 %h/.openclaw/workspace/vector_memory/embedding_service.py
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=default.target
-EOF
-
-# Reload systemd
-systemctl --user daemon-reload
-
-# Enable autostart
-systemctl --user enable embedding-service.service
-
-# Start
-systemctl --user start embedding-service.service
-
-# Check status
-systemctl --user status embedding-service.service
+echo '
+# Vector Memory Embedding Service
+if ! pgrep -f "embedding_service.py" > /dev/null; then
+  source ~/.config/vector-memory/env
+  nohup ~/.openclaw/workspace/vector_memory_venv/bin/python3 \
+    ~/.openclaw/workspace/vector_memory/embedding_service.py \
+    > /tmp/embedding_service.log 2>&1 &
+fi' >> ~/.bashrc
 ```
 
 ## Step 8: Reindex Memory

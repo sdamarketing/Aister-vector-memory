@@ -92,7 +92,6 @@ Installation requires:
 
 - **Root/sudo** to install system packages (postgresql-16-pgvector)
 - **PostgreSQL superuser** to create database and extensions
-- **systemd --user access** to run background services
 
 Recommended to test in an isolated environment (VM/container).
 
