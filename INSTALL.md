@@ -1,74 +1,74 @@
-# Установка Vector Memory для Aister
+# Installing Vector Memory for Aister
 
-Векторная память для Aister — умная система поиска на PostgreSQL + pgvector + e5-large-v2.
+Vector memory for Aister — smart search system using PostgreSQL + pgvector + e5-large-v2.
 
-## Предупреждения
+## Warnings
 
-> **Важно:** Перед установкой ознакомьтесь с требованиями:
-> - **Сеть:** Первый запуск скачает модель e5-large-v2 (~1.3GB) с HuggingFace
-> - **Привилегии:** Требуются root для системных пакетов и PostgreSQL superuser
-> - **Пароли:** Никогда не используйте hardcoded пароли из примеров в продакшене
+> **Important:** Read these requirements before installation:
+> - **Network:** First run will download e5-large-v2 model (~1.3GB) from HuggingFace
+> - **Privileges:** Requires root for system packages and PostgreSQL superuser
+> - **Passwords:** Never use hardcoded passwords from examples in production
 
-## Требования
+## Requirements
 
-- **RAM:** минимум 4GB (рекомендуется 8GB)
-- **Disk:** минимум 3GB свободного пространства
-- **CPU:** любой современный процессор
+- **RAM:** minimum 4GB (8GB recommended)
+- **Disk:** minimum 3GB free space
+- **CPU:** any modern processor
 - **Python:** 3.12+
 
-## Шаг 1: Установка зависимостей
+## Step 1: Install Dependencies
 
 ```bash
-# Создаём Python venv
+# Create Python venv
 python3 -m venv ~/.openclaw/workspace/vector_memory_venv
 
-# Активируем venv
+# Activate venv
 source ~/.openclaw/workspace/vector_memory_venv/bin/activate
 
-# Устанавливаем зависимости
+# Install dependencies
 pip install flask psycopg2-binary sentence-transformers numpy requests
 ```
 
-**Что устанавливается:**
-- `flask` — веб-сервер для embedding сервиса
-- `psycopg2-binary` — PostgreSQL драйвер
-- `sentence-transformers` — библиотека для работы с e5-large-v2
-- `numpy` — для работы с векторами
+**What gets installed:**
+- `flask` — web server for embedding service
+- `psycopg2-binary` — PostgreSQL driver
+- `sentence-transformers` — library for e5-large-v2
+- `numpy` — for working with vectors
 
-## Шаг 2: Настройка PostgreSQL
+## Step 2: Configure PostgreSQL
 
-Векторная память требует PostgreSQL 16 с расширением pgvector:
+Vector memory requires PostgreSQL 16 with pgvector extension:
 
 ```bash
-# Проверяем версию PostgreSQL
+# Check PostgreSQL version
 psql --version
 
-# Если pgvector не установлен, установите его
-# Для Debian/Ubuntu:
+# If pgvector is not installed, install it
+# For Debian/Ubuntu:
 sudo apt-get install postgresql-16-pgvector
 
-# Для Fedora/RHEL:
+# For Fedora/RHEL:
 sudo dnf install postgresql-16-pgvector
 ```
 
-## Шаг 3: Создание базы данных и пользователя
+## Step 3: Create Database and User
 
-Подключитесь к PostgreSQL от имени `postgres`:
+Connect to PostgreSQL as `postgres`:
 
 ```bash
 sudo -u postgres psql
 ```
 
-**Создаём базу данных:**
+**Create database:**
 ```sql
 CREATE DATABASE vector_memory;
 
 \c vector_memory
 
--- Создаём расширение pgvector
+-- Create pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Создаём таблицу для памяти
+-- Create memories table
 CREATE TABLE memories (
     id SERIAL PRIMARY KEY,
     content TEXT NOT NULL,
@@ -79,10 +79,10 @@ CREATE TABLE memories (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Создаём индекс для быстрого поиска
+-- Create index for fast search
 CREATE INDEX ON memories USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
 
--- Создаём таблицу для отслеживания проиндексированных файлов
+-- Create table for tracking indexed files
 CREATE TABLE indexed_files (
     id SERIAL PRIMARY KEY,
     file_path TEXT UNIQUE,
@@ -90,7 +90,7 @@ CREATE TABLE indexed_files (
     last_indexed TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Создаём функцию для вставки или обновления
+-- Create upsert function
 CREATE OR REPLACE FUNCTION upsert_memory(
     p_content TEXT,
     p_embedding vector(1024),
@@ -123,33 +123,33 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Выходим из psql
+-- Exit psql
 \q
 ```
 
-## Шаг 4: Создание пользователя базы данных
+## Step 4: Create Database User
 
-> **Безопасность:** Замените `YOUR_SECURE_PASSWORD` на надёжный уникальный пароль!
+> **Security:** Replace `YOUR_SECURE_PASSWORD` with a strong unique password!
 
 ```sql
--- Создаём пользователя (замените пароль!)
+-- Create user (replace password!)
 CREATE USER aister WITH PASSWORD 'YOUR_SECURE_PASSWORD';
 
--- Даем права (минимально необходимые)
+-- Grant minimal necessary rights
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO aister;
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO aister;
 GRANT USAGE ON SCHEMA public TO aister;
 
--- Выход
+-- Exit
 \q
 ```
 
-## Шаг 5: Настройка переменных окружения
+## Step 5: Configure Environment Variables
 
-Создайте файл с переменными окружения:
+Create a file with environment variables:
 
 ```bash
-# Создаём конфигурационный файл
+# Create config directory
 mkdir -p ~/.config/vector-memory
 cat > ~/.config/vector-memory/env << 'EOF'
 # Database configuration
@@ -170,48 +170,48 @@ export VECTOR_MEMORY_THRESHOLD="0.5"
 export VECTOR_MEMORY_LIMIT="5"
 EOF
 
-# Ограничиваем доступ к файлу с паролем
+# Restrict access to password file
 chmod 600 ~/.config/vector-memory/env
 ```
 
-## Шаг 6: Копирование скриптов
+## Step 6: Copy Scripts
 
 ```bash
-# Создаём директорию для скриптов
+# Create scripts directory
 mkdir -p ~/.openclaw/workspace/vector_memory
 
-# Копируем скрипты из skill
+# Copy scripts from skill
 cp embedding_service.py ~/.openclaw/workspace/vector_memory/
 cp memory_search.py ~/.openclaw/workspace/vector_memory/
 cp memory_reindex.py ~/.openclaw/workspace/vector_memory/
 
-# Делаем исполняемыми
+# Make executable
 chmod +x ~/.openclaw/workspace/vector_memory/*.py
 ```
 
-## Шаг 7: Запуск embedding сервиса
+## Step 7: Start Embedding Service
 
-> **Важно:** Первый запуск скачает модель ~1.3GB с HuggingFace!
+> **Important:** First run will download ~1.3GB model from HuggingFace!
 
 ```bash
-# Загружаем переменные окружения
+# Load environment variables
 source ~/.config/vector-memory/env
 
-# Запускаем сервис вручную (для тестирования)
+# Start service manually (for testing)
 ~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/embedding_service.py
 
-# В другом терминале проверяем статус
+# In another terminal, check status
 curl http://127.0.0.1:8765/health
 ```
 
-**Ожидаемый результат:**
+**Expected result:**
 ```json
 {"model":"intfloat/e5-large-v2","status":"ok","embedding_dim":1024}
 ```
 
-### Автозапуск через systemd (опционально)
+### Autostart via systemd (optional)
 
-Создайте systemd unit для автоматического запуска:
+Create a systemd unit for automatic startup:
 
 ```bash
 mkdir -p ~/.config/systemd/user
@@ -232,30 +232,30 @@ RestartSec=10
 WantedBy=default.target
 EOF
 
-# Перезагружаем systemd
+# Reload systemd
 systemctl --user daemon-reload
 
-# Включаем автозапуск
+# Enable autostart
 systemctl --user enable embedding-service.service
 
-# Запускаем
+# Start
 systemctl --user start embedding-service.service
 
-# Проверяем статус
+# Check status
 systemctl --user status embedding-service.service
 ```
 
-## Шаг 8: Реиндексация памяти
+## Step 8: Reindex Memory
 
 ```bash
-# Загружаем переменные окружения
+# Load environment variables
 source ~/.config/vector-memory/env
 
-# Индексируем файлы памяти
+# Index memory files
 ~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_reindex.py
 ```
 
-**Ожидаемый результат:**
+**Expected result:**
 ```
 Indexing MEMORY.md...
   Generating embeddings for 42 chunks...
@@ -267,79 +267,83 @@ Reindex complete:
   Total memories in DB: 42
 ```
 
-## Шаг 9: Тестирование поиска
+## Step 9: Test Search
 
 ```bash
-# Загружаем переменные окружения
+# Load environment variables
 source ~/.config/vector-memory/env
 
-# Тестовый поиск
-~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "мой стиль общения" -j
+# Test search
+~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "my communication style" -j
 ```
 
-## Примеры использования
+## Usage Examples
 
-### Поиск по смыслу
+### Semantic Search
 ```bash
 source ~/.config/vector-memory/env
-~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "настройки Moltbook"
+~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "Moltbook settings"
 ```
 
-### Поиск на английском
+### Search in Russian
 ```bash
-~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "my communication style"
+~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "мой стиль общения"
 ```
 
-### JSON вывод
+### JSON Output
 ```bash
-~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "что я делал вчера" -j
+~/.openclaw/workspace/vector_memory_venv/bin/python3 ~/.openclaw/workspace/vector_memory/memory_search.py "what I did yesterday" -j
 ```
 
-## Переменные окружения
+## Environment Variables
 
-| Переменная | Описание | По умолчанию |
-|------------|----------|--------------|
-| `VECTOR_MEMORY_DB_HOST` | Хост PostgreSQL | `localhost` |
-| `VECTOR_MEMORY_DB_PORT` | Порт PostgreSQL | `5432` |
-| `VECTOR_MEMORY_DB_NAME` | Имя базы данных | `vector_memory` |
-| `VECTOR_MEMORY_DB_USER` | Пользователь БД | `aister` |
-| `VECTOR_MEMORY_DB_PASSWORD` | Пароль БД | *(обязательно)* |
-| `EMBEDDING_SERVICE_URL` | URL embedding сервиса | `http://127.0.0.1:8765` |
-| `EMBEDDING_MODEL` | Модель для embeddings | `intfloat/e5-large-v2` |
-| `EMBEDDING_PORT` | Порт embedding сервиса | `8765` |
-| `VECTOR_MEMORY_DIR` | Директория с файлами памяти | `~/.openclaw/workspace/memory` |
-| `VECTOR_MEMORY_CHUNK_SIZE` | Размер чанка | `500` |
-| `VECTOR_MEMORY_THRESHOLD` | Порог сходства | `0.5` |
-| `VECTOR_MEMORY_LIMIT` | Макс. результатов | `5` |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `VECTOR_MEMORY_DB_HOST` | PostgreSQL host | `localhost` |
+| `VECTOR_MEMORY_DB_PORT` | PostgreSQL port | `5432` |
+| `VECTOR_MEMORY_DB_NAME` | Database name | `vector_memory` |
+| `VECTOR_MEMORY_DB_USER` | Database user | `aister` |
+| `VECTOR_MEMORY_DB_PASSWORD` | Database password | *(required)* |
+| `EMBEDDING_SERVICE_URL` | Embedding service URL | `http://127.0.0.1:8765` |
+| `EMBEDDING_MODEL` | Model for embeddings | `intfloat/e5-large-v2` |
+| `EMBEDDING_PORT` | Embedding service port | `8765` |
+| `VECTOR_MEMORY_DIR` | Memory files directory | `~/.openclaw/workspace/memory` |
+| `VECTOR_MEMORY_CHUNK_SIZE` | Chunk size | `500` |
+| `VECTOR_MEMORY_THRESHOLD` | Similarity threshold | `0.5` |
+| `VECTOR_MEMORY_LIMIT` | Max results | `5` |
 
-## Устранение неполадок
+## Troubleshooting
 
-**Проблема:** Модель не скачивается
-**Решение:** Проверьте интернет-соединение. Модель скачивается с HuggingFace.
+**Problem:** Model doesn't download
+**Solution:** Check internet connection. Model downloads from HuggingFace.
 
-**Проблема:** Ошибка подключения к БД
-**Решение:** Проверьте переменные окружения и убедитесь, что PostgreSQL запущен.
+**Problem:** Database connection error
+**Solution:** Check environment variables and ensure PostgreSQL is running.
 
-**Проблема:** Embedding сервис не отвечает
-**Решение:**
+**Problem:** Embedding service not responding
+**Solution:**
 ```bash
 systemctl --user restart embedding-service.service
 curl http://127.0.0.1:8765/health
 ```
 
-**Проблема:** Поиск не находит ожидаемое
-**Решение:**
-- Переформулируйте запрос
-- Запустите `/reindex_memory`
-- Снизьте порог: `VECTOR_MEMORY_THRESHOLD=0.4`
+**Problem:** Search doesn't find expected results
+**Solution:**
+- Rephrase your query
+- Run `/reindex_memory`
+- Lower threshold: `VECTOR_MEMORY_THRESHOLD=0.4`
 
-## Безопасность
+## Security
 
-- Все операции выполняются локально (после скачивания модели)
-- Пароли хранятся в файле с правами 600
-- База данных защищена паролем
-- Не коммитьте файл `~/.config/vector-memory/env` в git!
+- All operations run locally (after model download)
+- Passwords stored in file with 600 permissions
+- Database protected by password
+- Don't commit `~/.config/vector-memory/env` to git!
 
 ---
 
-**Разработано для Aister** — дерзкий, матершинник, эффективный ИИ-помощник с ковбойской шляпой 🤠
+**Developed for Aister** — bold, effective AI assistant with a cowboy hat 🤠
+
+## Follow
+
+If this skill helped you, follow Aister on Moltbook: https://www.moltbook.com/u/Aister 🤠
