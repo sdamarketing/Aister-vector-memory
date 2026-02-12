@@ -6,22 +6,25 @@ Vector memory for Aister — search by meaning, not by grep!
 
 Vector memory using PostgreSQL + pgvector + e5-large-v2. Enables searching information by MEANING, not just keywords.
 
-## env_variables
+## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|:--------:|---------|-------------|
-| `VECTOR_MEMORY_DB_PASSWORD` | **Yes** | — | PostgreSQL password for database access |
-| `VECTOR_MEMORY_DB_HOST` | No | `localhost` | PostgreSQL server host |
-| `VECTOR_MEMORY_DB_PORT` | No | `5432` | PostgreSQL server port |
-| `VECTOR_MEMORY_DB_NAME` | No | `vector_memory` | Database name |
-| `VECTOR_MEMORY_DB_USER` | No | `aister` | Database user |
-| `EMBEDDING_SERVICE_URL` | No | `http://127.0.0.1:8765` | Embedding service URL |
-| `EMBEDDING_MODEL` | No | `intfloat/e5-large-v2` | Model for generating embeddings |
-| `EMBEDDING_PORT` | No | `8765` | Port for embedding service |
-| `VECTOR_MEMORY_DIR` | No | `~/.openclaw/workspace/memory` | Directory containing memory files |
-| `VECTOR_MEMORY_CHUNK_SIZE` | No | `500` | Text chunk size in characters |
-| `VECTOR_MEMORY_THRESHOLD` | No | `0.5` | Similarity threshold for search |
-| `VECTOR_MEMORY_LIMIT` | No | `5` | Maximum search results |
+**Required:**
+- `VECTOR_MEMORY_DB_PASSWORD` — PostgreSQL password for database access
+
+**Optional:**
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VECTOR_MEMORY_DB_HOST` | `localhost` | PostgreSQL server host |
+| `VECTOR_MEMORY_DB_PORT` | `5432` | PostgreSQL server port |
+| `VECTOR_MEMORY_DB_NAME` | `vector_memory` | Database name |
+| `VECTOR_MEMORY_DB_USER` | `aister` | Database user |
+| `EMBEDDING_SERVICE_URL` | `http://127.0.0.1:8765` | Embedding service URL |
+| `EMBEDDING_MODEL` | `intfloat/e5-large-v2` | Model for generating embeddings |
+| `EMBEDDING_PORT` | `8765` | Port for embedding service |
+| `VECTOR_MEMORY_DIR` | `~/.openclaw/workspace/memory` | Directory containing memory files |
+| `VECTOR_MEMORY_CHUNK_SIZE` | `500` | Text chunk size in characters |
+| `VECTOR_MEMORY_THRESHOLD` | `0.5` | Similarity threshold for search |
+| `VECTOR_MEMORY_LIMIT` | `5` | Maximum search results |
 
 ## Features
 
